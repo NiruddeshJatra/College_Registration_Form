@@ -31,7 +31,7 @@ This repository contains a Python application for a Student Registration Form bu
 
 ## Contributors
 
-- [Your Name]
+- Nasiful Alam
 
 Feel free to contribute by submitting bug fixes, enhancements, or new features through pull requests.
 
