@@ -13,10 +13,12 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QButtonGroup,
     QFileDialog,
-    QCalendarWidget
+    QCalendarWidget,
+    QCompleter
 )
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtCore import Qt, QDate
+from datetime import datetime
 import sys
 import re
 import mysql.connector
@@ -112,10 +114,8 @@ class MyForm(QMainWindow):
         self.nameLabel.setFixedWidth(LABEL_WIDTH)
         self.nameEditLayout = QHBoxLayout()
         self.firstNameEdit = QLineEdit()
-        self.firstName = self.firstNameEdit.text()
         self.firstNameEdit.setPlaceholderText("First Name")
         self.lastNameEdit = QLineEdit()
-        self.lastName = self.lastNameEdit.text()
         self.lastNameEdit.setPlaceholderText("Last Name")
         self.nameEditLayout.addWidget(self.firstNameEdit)
         self.nameEditLayout.addWidget(self.lastNameEdit)
@@ -140,6 +140,7 @@ class MyForm(QMainWindow):
         self.dateEdit = QLineEdit()
         self.dateEdit.setPlaceholderText("Select Date")
         self.dateEdit.setCursor(Qt.CursorShape.ArrowCursor)
+        self.dateEdit.textChanged.connect(self.calculateAge)
 
         self.calendar = QCalendarWidget()
         self.calendar.setGridVisible(True)
@@ -156,19 +157,18 @@ class MyForm(QMainWindow):
         self.ageLabel = QLabel("Age")
         self.ageLabel.setFixedWidth(LABEL_WIDTH)
         self.ageEdit = QLineEdit()
-        self.age = self.ageEdit.text()
+        self.ageEdit.setReadOnly(True)
         self.formLayout.addRow(self.ageLabel, self.ageEdit)
 
         self.emailLabel = QLabel("Email Address")
         self.emailLabel.setFixedWidth(LABEL_WIDTH)
         self.emailEdit = QLineEdit()
-        self.email = self.emailEdit.text()
         self.formLayout.addRow(self.emailLabel, self.emailEdit)
 
         self.passwordLabel = QLabel("Password")
         self.passwordLabel.setFixedWidth(LABEL_WIDTH)
         self.passwordEdit = QLineEdit()
-        self.password = self.passwordEdit.text()
+        self.passwordEdit.setEchoMode(QLineEdit.EchoMode.Password)
         self.formLayout.addRow(self.passwordLabel, self.passwordEdit)
 
         self.phoneLabel = QLabel("Phone Number")
@@ -179,7 +179,6 @@ class MyForm(QMainWindow):
         self.numberOptions.addItems(codes)
         self.numberOptions.setFixedWidth(100)
         self.phoneEdit = QLineEdit()
-        self.phoneNo = self.numberOptions.currentText() + self.phoneEdit.text()
         self.phoneLayout.addWidget(self.numberOptions)
         self.phoneLayout.addWidget(self.phoneEdit)
         self.formLayout.addRow(self.phoneLabel, self.phoneLayout)
@@ -202,7 +201,6 @@ class MyForm(QMainWindow):
         self.districtEdit = QLineEdit()
         self.postOfficeEdit.setPlaceholderText("Post Office")
         self.districtEdit.setPlaceholderText("District")
-        self.address = f"{self.villageEdit.text()}, {self.thanaEdit.text()}, {self.postOfficeEdit.text()}, {self.districtEdit.text()}"
         self.address2EditLayout.addWidget(self.postOfficeEdit)
         self.address2EditLayout.addWidget(self.districtEdit)
         self.formLayout.addRow(self.address2Label, self.address2EditLayout)
@@ -213,7 +211,6 @@ class MyForm(QMainWindow):
         self.hobbyEdit.setFixedSize(200, 30)
         options = ["Drawing", "Decorating", "Playing", "Singing", "Others"]
         self.hobbyEdit.addItems(options)
-        self.hobbies = self.hobbyEdit.currentText()
         # self.hobbyEdit.activated.connect(self.showDropdown)
         self.formLayout.addRow(self.hobbyLabel, self.hobbyEdit)
 
@@ -246,11 +243,45 @@ class MyForm(QMainWindow):
         self.submit.clicked.connect(self.addProfile)
         self.buttonLayout.addWidget(self.submit)
         self.buttonLayout.addWidget(self.reset)
+        
+        self.firstNameEdit.returnPressed.connect(self.lastNameEdit.setFocus)
+        self.lastNameEdit.returnPressed.connect(self.dateEdit.setFocus)
+        self.dateEdit.returnPressed.connect(self.emailEdit.setFocus)
+        self.emailEdit.returnPressed.connect(self.passwordEdit.setFocus)
+        self.passwordEdit.returnPressed.connect(self.phoneEdit.setFocus)
+        self.phoneEdit.returnPressed.connect(self.villageEdit.setFocus)
+        self.villageEdit.returnPressed.connect(self.thanaEdit.setFocus)
+        self.thanaEdit.returnPressed.connect(self.postOfficeEdit.setFocus)
+        self.postOfficeEdit.returnPressed.connect(self.districtEdit.setFocus)
+        self.districtEdit.returnPressed.connect(self.hobbyEdit.setFocus)
+        
+        self.firstNameEdit.setCompleter(QCompleter(["Nasiful"]))
+        self.lastNameEdit.setCompleter(QCompleter(["Alam"]))
+        self.dateEdit.setCompleter(QCompleter(["1999-03-06"]))
+        self.emailEdit.setCompleter(QCompleter(["nasifulalam1212@gmail.com"]))
+        self.passwordEdit.setCompleter(QCompleter(["Qweasd123@#"]))
+        self.phoneEdit.setCompleter(QCompleter(["26181662"]))
+        self.villageEdit.setCompleter(QCompleter(["East Kanaimadari"]))
+        self.thanaEdit.setCompleter(QCompleter(["Chandanaish"]))
+        self.postOfficeEdit.setCompleter(QCompleter(["Pathandandi"]))
+        self.districtEdit.setCompleter(QCompleter(["Chattogram"]))
 
         self.generalLayout.addLayout(self.formLayout)
         self.generalLayout.addWidget(self.checkBox)
         self.generalLayout.addLayout(self.buttonLayout)
 
+
+    def calculateAge(self):
+        dobText = self.dateEdit.text()
+        try:
+            dob = datetime.strptime(dobText, '%Y-%m-%d')
+            today = datetime.now()
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            self.ageEdit.setText(str(age))
+        except ValueError:
+            self.ageEdit.setText("")
+            
+            
     def showDropdown(self):
         self.popup = QWidget()
         self.popupLayout = QVBoxLayout()
@@ -308,6 +339,16 @@ class MyForm(QMainWindow):
             
     def addProfile(self):
         if self.submit.isEnabled:
+            self.firstName = self.firstNameEdit.text()
+            self.lastName = self.lastNameEdit.text()
+            self.selectedDate = self.dateEdit.text()
+            self.age = self.ageEdit.text()
+            self.email = self.emailEdit.text()
+            self.password = self.passwordEdit.text()
+            self.phoneNo = self.numberOptions.currentText() + self.phoneEdit.text()
+            self.address = f"{self.villageEdit.text()}, {self.thanaEdit.text()}, {self.postOfficeEdit.text()}, {self.districtEdit.text()}"
+            self.hobbies = self.hobbyEdit.currentText()
+            
             self.loadDatabase()
             self.c.execute("""
                     INSERT INTO students (first_name, last_name, gender, date_of_birth, age, email, password, phone_no, address, hobbies, photo)
@@ -315,6 +356,7 @@ class MyForm(QMainWindow):
                 """, (self.firstName, self.lastName, self.gender, self.selectedDate, self.age, self.email, self.password, self.phoneNo, self.address, self.hobbies, self.imageData,))
             self.mydb.commit()
             self.mydb.close()
+            print(self.firstName, self.lastName, self.gender, self.selectedDate, self.age, self.email, self.password, self.phoneNo, self.address, self.hobbies)
         
 def main():
     app = QApplication(sys.argv)
