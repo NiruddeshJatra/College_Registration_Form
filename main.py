@@ -1,23 +1,6 @@
-from PyQt6.QtWidgets import (
-    QApplication, 
-    QMainWindow, 
-    QWidget, 
-    QPushButton, 
-    QLabel, 
-    QLineEdit, 
-    QComboBox, 
-    QRadioButton, 
-    QCheckBox, 
-    QHBoxLayout, 
-    QVBoxLayout, 
-    QFormLayout,
-    QButtonGroup,
-    QFileDialog,
-    QCalendarWidget,
-    QCompleter
-)
-from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 from datetime import datetime
 import sys
 import re
@@ -126,6 +109,7 @@ class MyForm(QMainWindow):
         self.genderButtonLayout = QHBoxLayout()
         self.maleSelect = QRadioButton("Male")
         self.femaleSelect = QRadioButton("Female")
+        self.gender = ""
         self.genderGroup = QButtonGroup()
         self.genderGroup.addButton(self.maleSelect)
         self.genderGroup.addButton(self.femaleSelect)
@@ -221,6 +205,7 @@ class MyForm(QMainWindow):
         self.photoSizeLabel.setStyleSheet("font-size: 8pt; color: #FE231F; margin: 1px;")
         self.photoButton = QPushButton("Choose File")
         self.photoButton.setStyleSheet("margin-left: 5px; margin-right: 5px;")
+        self.imageData = ""
         self.photoButton.clicked.connect(self.uploadImage)
         self.photoUploadLabel = QLabel("No File Chosen")
         self.photoUploadLabel.setStyleSheet("margin-left: 10px; margin-right: 50px;")
@@ -241,6 +226,7 @@ class MyForm(QMainWindow):
         self.reset.setFixedWidth(BUTTON_WIDTH)
         self.submit.setEnabled(False)
         self.submit.clicked.connect(self.addProfile)
+        self.reset.clicked.connect(self.resetEntry)
         self.buttonLayout.addWidget(self.submit)
         self.buttonLayout.addWidget(self.reset)
         
@@ -335,10 +321,44 @@ class MyForm(QMainWindow):
 
             with open(imagePath, 'rb') as file:
                 self.imageData = file.read()
+                
+    def checkInputError(self):
+        objects = [self.firstNameEdit, self.lastNameEdit, self.dateEdit, self.ageEdit, self.emailEdit, self.passwordEdit, self.phoneEdit, self.villageEdit, self.thanaEdit, self.postOfficeEdit, self.districtEdit]
 
+        for object in objects:
+            if object.text() == "":
+                object.setStyleSheet("""
+                    border: 1px solid red;
+                    border-radius: 4px;
+                    padding: 5px;
+                    color: #222;
+                    background-color: #B1B1A5;
+                    margin-right: 40px;
+                """)
+                return False
+            
+            else:
+                object.setStyleSheet("""
+                    border: 1px solid rgba(40, 40, 81, 0.4);
+                    border-radius: 4px;
+                    padding: 5px;
+                    color: #222;
+                    background-color: #B1B1A5;
+                    margin-right: 40px;
+                """)
+
+        return self.gender != "" and self.imageData != ""
+        
+    def showMessageBox(self):
+        msg = QMessageBox()
+        font = QFont("Sitka", 20)
+        font.setBold(True)
+        msg.setFont(font)
+        msg.setText("Registration Completed!!")
+        msg.exec()
             
     def addProfile(self):
-        if self.submit.isEnabled:
+        if self.checkInputError() and self.submit.isEnabled:
             self.firstName = self.firstNameEdit.text()
             self.lastName = self.lastNameEdit.text()
             self.selectedDate = self.dateEdit.text()
@@ -356,7 +376,24 @@ class MyForm(QMainWindow):
                 """, (self.firstName, self.lastName, self.gender, self.selectedDate, self.age, self.email, self.password, self.phoneNo, self.address, self.hobbies, self.imageData,))
             self.mydb.commit()
             self.mydb.close()
-            print(self.firstName, self.lastName, self.gender, self.selectedDate, self.age, self.email, self.password, self.phoneNo, self.address, self.hobbies)
+            
+            self.showMessageBox()
+            
+            
+    def resetEntry(self):
+        self.firstNameEdit.setText("")
+        self.lastNameEdit.setText("")
+        self.dateEdit.setText("")
+        self.ageEdit.setText("")
+        self.emailEdit.setText("")
+        self.passwordEdit.setText("")
+        self.phoneEdit.setText("")
+        self.villageEdit.setText("")
+        self.thanaEdit.setText("")
+        self.postOfficeEdit.setText("")
+        self.districtEdit.setText("")
+        self.photoUploadLabel = QLabel("No File Chosen")
+        
         
 def main():
     app = QApplication(sys.argv)
